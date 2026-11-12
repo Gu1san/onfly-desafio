@@ -35,12 +35,14 @@ class CsvRateRepository:
                         rate = Decimal(raw_rate)
                     except InvalidOperation as err:
                         raise InputFileError(f"taxa inválida para {currency} em {self._path}") from err
-                    if rate <= 0:
-                        raise InputFileError(f"taxa não positiva para {currency} em {self._path}")
+                    if not rate.is_finite() or rate <= 0:
+                        raise InputFileError(
+                            f"taxa inválida ou não positiva para {currency} em {self._path}"
+                        )
                     rates[currency] = rate
         except FileNotFoundError as err:
             raise InputFileError(f"tabela de câmbio não encontrada: {self._path}") from err
-        except (OSError, csv.Error) as err:
+        except (OSError, csv.Error, UnicodeDecodeError) as err:
             raise InputFileError(f"falha ao ler {self._path}: {err}") from err
 
         if not rates:
